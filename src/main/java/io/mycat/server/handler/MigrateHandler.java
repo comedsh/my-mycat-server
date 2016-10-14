@@ -100,6 +100,17 @@ public final class MigrateHandler {
                 String path= taskPath + "/" + key;
                 transactionFinal=   transactionFinal.create().forPath(path, JSON.toJSONBytes(value)).and() .setData().forPath(taskPath,stmt.getBytes("UTF-8")).and() ;
             }
+            
+            /**
+             * My comments:
+             * 
+             * 很遗憾，作者并没有完成....... zookeeper 这里只是为了避免多个 mycat 同时处理到相同的 migrate job。
+             * 
+             * 不过后面的逻辑却非常的清晰了，MigrateTask 中包含了哪些 slots 将会移动到某个新的节点，然后就是写 Query 来做了，建议按照某个批量来做.. 
+             * 
+             * 如果可以，自己来写问题也不大... 
+             * 
+             */
             transactionFinal.commit();
         } catch (Exception e) {
             LOGGER.error("migrate error", e);

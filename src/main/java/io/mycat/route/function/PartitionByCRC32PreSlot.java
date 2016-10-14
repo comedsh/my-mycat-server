@@ -25,13 +25,18 @@ import io.mycat.config.model.rule.RuleAlgorithm;
 /**
  * 自动迁移御用分片算法，预分slot 102400个，映射到dn上，再conf下会保存映射文件，请不要修改
  *
+ * 几个核心的概念需要澄清
+ * 
+ * slot -> 虚拟节点
+ * slot size -> 每个 data node 对应多少个 slot 既虚拟节点
+ *
  * @author nange magicdoom@gmail.com
  */
-public class PartitionByCRC32PreSlot extends AbstractPartitionAlgorithm
-        implements RuleAlgorithm, TableRuleAware, SlotFunction {
+public class PartitionByCRC32PreSlot extends AbstractPartitionAlgorithm implements RuleAlgorithm, TableRuleAware, SlotFunction {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("PartitionByCRC32PreSlot");
-
+    
+    /** 默认总共有多少个虚拟节点 **/
     public static final int DEFAULT_SLOTS_NUM = 102400;
 
     private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
@@ -90,7 +95,11 @@ public class PartitionByCRC32PreSlot extends AbstractPartitionAlgorithm
         }
         return prop;
     }
-
+    
+    /**
+     * 
+     * @return
+     */
     private Properties genarateP() {
     	
         int slotSize = DEFAULT_SLOTS_NUM / count; /** my comments: slot size, 每一个 data node 存放的多少个 slots **/
@@ -163,19 +172,33 @@ public class PartitionByCRC32PreSlot extends AbstractPartitionAlgorithm
     }
 
     @Override public Integer calculate(String columnValue) {
-        if (ruleName == null)
-            throw new RuntimeException();
+    	
+        if (ruleName == null) throw new RuntimeException();
+        
         PureJavaCrc32 crc32 = new PureJavaCrc32();
+        
         byte[] bytes = columnValue.getBytes(DEFAULT_CHARSET);
+        
         crc32.update(bytes, 0, bytes.length);
+        
+        /** 得到 columnValue 在一致性 hash 环中所对应的 point **/
         long x = crc32.getValue();
+        
+        /** 通过取余的方式找到该 columnValue 应该存储到哪个 slot 中；slot? 就是虚拟节点  **/
         int slot = (int) (x % DEFAULT_SLOTS_NUM);
+        
         for (Map.Entry<Integer, List<Range>> rangeEntry : rangeMap.entrySet()) {
+        	
             List<Range> range = rangeEntry.getValue();
+            
             for (Range range1 : range) {
+            	
                 if (slot >= range1.start && slot <= range1.end) {
+                	
                     this.slot = slot;
+                    
                     return rangeEntry.getKey();
+                    
                 }
             }
 

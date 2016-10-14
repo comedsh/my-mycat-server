@@ -54,7 +54,7 @@ public class MyPartitionByMurmurHashTest {
 	 * 
 	 */
 	@Test
-	public void testPartition(){
+	public void testInitPartition(){
 
 		
 		Connection conn = null;
@@ -77,14 +77,11 @@ public class MyPartitionByMurmurHashTest {
             
             stmt.executeUpdate(sql);
             
-            //sql = "insert into torder (ID, CUSTOMER_ID) values(100000, 10000000)";
-            //stmt.executeUpdate(sql);
-            
 			int total = 10_0000; // 数据量 10万
 			
 			// ORDERID 正序，CUSTOMERID 反序
 			
-			for( int i = 1_0000, j=1_0000; i < total + 1_0000; i++){ //假设分片键从1万开始
+			for( int i = 1_0000, j=1_0000; i <= total + 1_0000; i++){ //假设分片键从1万开始
 				
 				stmt.addBatch("insert into torder (ID, CUSTOMER_ID) values('"+i+"', '"+(total-i)+"')");
 				

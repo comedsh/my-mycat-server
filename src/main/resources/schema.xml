@@ -27,7 +27,9 @@
 			<childTable name="customer_addr" primaryKey="ID" joinKey="customer_id" parentKey="id" />
 		</table>
 		
-		<table name="torder" primaryKey="ID" dataNode="dn1,dn2,dn3,dn4" rule="sharding-by-murmur" />		
+		<table name="torder" primaryKey="ID" dataNode="dn1,dn2" rule="sharding-by-murmur" />	
+		
+		<table name="uorder" primaryKey="ID" dataNode="dn1,dn2" rule="crc32slot" />		
 		
 		<table name="mycat_sequence" primaryKey="name" dataNode="dn1"/>
 		
