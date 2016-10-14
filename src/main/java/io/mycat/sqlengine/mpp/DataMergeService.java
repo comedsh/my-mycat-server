@@ -32,7 +32,7 @@ import io.mycat.net.mysql.RowDataPacket;
 import io.mycat.route.RouteResultset;
 import io.mycat.route.RouteResultsetNode;
 import io.mycat.server.ServerConnection;
-import io.mycat.sqlengine.mpp.tmp1.RowDataSorter;
+import io.mycat.sqlengine.mpp.tmp.RowDataSorter;
 import io.mycat.util.StringUtil;
 
 import org.apache.log4j.Logger;

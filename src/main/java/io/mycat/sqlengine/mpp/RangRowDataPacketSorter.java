@@ -24,7 +24,7 @@
 package io.mycat.sqlengine.mpp;
 
 import io.mycat.net.mysql.RowDataPacket;
-import io.mycat.sqlengine.mpp.tmp1.RowDataSorter;
+import io.mycat.sqlengine.mpp.tmp.RowDataSorter;
 
 
 public class RangRowDataPacketSorter extends RowDataSorter {

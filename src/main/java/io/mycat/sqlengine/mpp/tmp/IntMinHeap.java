@@ -1,4 +1,4 @@
-package io.mycat.sqlengine.mpp.tmp1;
+package io.mycat.sqlengine.mpp.tmp;
 
 import java.util.Arrays;
 import java.util.HashSet;
