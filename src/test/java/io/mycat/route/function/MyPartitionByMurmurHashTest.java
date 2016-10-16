@@ -50,7 +50,10 @@ public class MyPartitionByMurmurHashTest {
 	/**
 	 * 
 	 * 创建测试 order: 
+	 * 
 	 * create table torder ( id int not null primary key auto_increment, customer_id int );
+	 * 
+	 * 模拟一种非常简单的关系，一个 customer 对应一个 order，目的是为了测试在跨库的情况下，两者之间的 joint 关系。
 	 * 
 	 */
 	@Test
@@ -58,6 +61,8 @@ public class MyPartitionByMurmurHashTest {
 
 		
 		Connection conn = null;
+		
+		Statement stmt = null;
         
         String url = "jdbc:mysql://127.0.0.1:8066/TESTDB?user=root&password=digdeep&useUnicode=true&characterEncoding=UTF8";
  
@@ -67,9 +72,13 @@ public class MyPartitionByMurmurHashTest {
             
             conn = DriverManager.getConnection(url);
             
-            Statement stmt = conn.createStatement();		
+            stmt = conn.createStatement();		
             
             String sql = "drop table if exists torder";
+            
+            stmt.executeUpdate(sql);
+            
+            sql = "drop table if exists tcustomer";
             
             stmt.executeUpdate(sql);
             
@@ -77,21 +86,34 @@ public class MyPartitionByMurmurHashTest {
             
             stmt.executeUpdate(sql);
             
-			int total = 10_0000; // 数据量 10万
+            sql = "create table tcustomer ( id int not null primary key auto_increment, name varchar(30) )";
+            
+            stmt.executeUpdate(sql);
+            
+			int total = 10_0000; // 总共存放 10万条数据，但 ORDERID 从 1万开始计数。
 			
-			// ORDERID 正序，CUSTOMERID 反序
+			// ORDERID 正序递增，CUSTOMERID 反序递减
 			
-			for( int i = 1_0000, j=1_0000; i <= total + 1_0000; i++){ //假设分片键从1万开始
+			for( int i = 1_0000; i <= total + 1_0000; i++){ //假设分片键从1万开始
 				
-				stmt.addBatch("insert into torder (ID, CUSTOMER_ID) values('"+i+"', '"+(total-i)+"')");
+				int customerid = ( total + 10000 ) - i; // 因为从 1W 开始计数，所以，+10000
+				
+				stmt.addBatch("insert into torder (ID, CUSTOMER_ID) values('"+i+"', '"+customerid+"')");
+				stmt.addBatch("insert into tcustomer (ID, NAME) VALUES('"+customerid+"', 'NAME_"+customerid+"')");
 				
 				if( i % 10000 == 0 ){
 					
 					stmt.executeBatch();
+					
+					System.out.println("batch committed ~ ");
 				
 				}
 				
+				System.out.println("processed "+ i);
+				
 			}
+			
+			System.out.println("completed~~~~");
 			
         }catch(Exception e){
         	
@@ -101,6 +123,7 @@ public class MyPartitionByMurmurHashTest {
         	
         
 			try {
+				stmt.close();
 				conn.close();
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block

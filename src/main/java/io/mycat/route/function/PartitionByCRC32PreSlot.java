@@ -207,7 +207,8 @@ public class PartitionByCRC32PreSlot extends AbstractPartitionAlgorithm implemen
         /**
          * 我的个熊哦，下面的这个逻辑这么简单，就实现了上述依靠 Range 实现的算法，那为什么不使用下面这个简单的算法呢？
          * 
-         * - 我没懂~~~ 要是我，一定使用下面这套方法，省去了 test.properties 和 Range 以及一个 Range 相关的 Map
+         * - 我没懂~~~ 要是我，一定使用下面这套方法，省去了 test.properties 和 Range 以及一个 Range 相关的 Map， 
+         * - 作者弃用下面这个算法，估计是为了方便将来计算扩容算法计算需要扩容迁移的节点。
          * 
          */
         this.slot = slot;
