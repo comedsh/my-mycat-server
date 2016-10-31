@@ -39,6 +39,8 @@ import io.mycat.MycatServer;
 import io.mycat.net.factory.FrontendConnectionFactory;
 
 /**
+ * 
+ * 
  * @author mycat
  */
 public final class NIOAcceptor extends Thread  implements SocketAcceptor{

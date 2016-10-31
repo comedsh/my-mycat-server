@@ -92,6 +92,7 @@ public class MySQLConnectionHandler extends BackendAsyncHandler {
 		case RESULT_STATUS_INIT:
 			switch (data[4]) {
 			case OkPacket.FIELD_COUNT:
+				/** 当成功处理完成 INSERT/UPDATE/DELETE 操作后 database 的响应 **/
 				handleOkPacket(data);
 				break;
 			case ErrorPacket.FIELD_COUNT:
@@ -115,6 +116,7 @@ public class MySQLConnectionHandler extends BackendAsyncHandler {
 				break;
 			case EOFPacket.FIELD_COUNT:
 				resultStatus = RESULT_STATUS_FIELD_EOF;
+				/** 元数据返回时触发 **/
 				handleFieldEofPacket(data);
 				break;
 			default:
@@ -129,9 +131,11 @@ public class MySQLConnectionHandler extends BackendAsyncHandler {
 				break;
 			case EOFPacket.FIELD_COUNT:
 				resultStatus = RESULT_STATUS_INIT;
+				/** 行结束标志返回时触发 **/
 				handleRowEofPacket(data);
 				break;
 			default:
+				/** 行数据返回时触发 **/
 				handleRowPacket(data);
 			}
 			break;

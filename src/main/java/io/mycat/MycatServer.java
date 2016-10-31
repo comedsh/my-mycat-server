@@ -375,12 +375,16 @@ public class MycatServer {
 			NIOReactorPool reactorPool = new NIOReactorPool(
 					DirectByteBufferPool.LOCAL_BUF_THREAD_PREX + "NIOREACTOR",
 					processors.length);
+			
+			// 作为客户端连接 datasource
 			connector = new NIOConnector(DirectByteBufferPool.LOCAL_BUF_THREAD_PREX + "NIOConnector", reactorPool);
 			((NIOConnector) connector).start();
-
+			
+			// 作为管理服务端监听用户程序的连接
 			manager = new NIOAcceptor(DirectByteBufferPool.LOCAL_BUF_THREAD_PREX + NAME
 					+ "Manager", system.getBindIp(), system.getManagerPort(), mf, reactorPool);
-
+			
+			// 作为应用服务端监听用户程序的连接
 			server = new NIOAcceptor(DirectByteBufferPool.LOCAL_BUF_THREAD_PREX + NAME
 					+ "Server", system.getBindIp(), system.getServerPort(), sf, reactorPool);
 		}

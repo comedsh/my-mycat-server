@@ -1,7 +1,6 @@
 package io.mycat.route.function;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -15,6 +14,8 @@ import junit.framework.Assert;
 public class MyPartitionByMurmurHashTest {
 	
 	HashFunction hashFunc = Hashing.murmur3_32( 0 );
+	
+	public static String url = "jdbc:mysql://127.0.0.1:8066/TESTDB?user=root&password=digdeep&useUnicode=true&characterEncoding=UTF8";
 	
 	/**
 	 * 通过 testCalculatedDuplicatePoints() 和 testIsSupportBigIntID() 两个测试用例，告诉我们，任意多个 ID 都可以映射到 2＾³² 环中的一个 point
@@ -58,38 +59,29 @@ public class MyPartitionByMurmurHashTest {
 	 */
 	@Test
 	public void testInitPartition(){
-
-		
-		Connection conn = null;
-		
-		Statement stmt = null;
-        
-        String url = "jdbc:mysql://127.0.0.1:8066/TESTDB?user=root&password=digdeep&useUnicode=true&characterEncoding=UTF8";
  
-        try {
-            
-        	Class.forName("com.mysql.jdbc.Driver");// 动态加载mysql驱动
-            
-            conn = DriverManager.getConnection(url);
-            
-            stmt = conn.createStatement();		
-            
-            String sql = "drop table if exists torder";
-            
-            stmt.executeUpdate(sql);
-            
-            sql = "drop table if exists tcustomer";
-            
-            stmt.executeUpdate(sql);
-            
-            sql = "create table torder ( id int not null primary key auto_increment, customer_id int )";
-            
-            stmt.executeUpdate(sql);
-            
-            sql = "create table tcustomer ( id int not null primary key auto_increment, name varchar(30) )";
-            
-            stmt.executeUpdate(sql);
-            
+        Connection conn = MyTestHelper.getDBConnection( url );
+        
+        Statement stmt = MyTestHelper.getStatement(conn);
+        
+        try{
+        	
+	        String sql = "drop table if exists torder";
+	            
+	        stmt.executeUpdate(sql);
+	        
+	        sql = "drop table if exists tcustomer";
+	        
+	        stmt.executeUpdate(sql);
+	        
+	        sql = "create table torder ( id int not null primary key auto_increment, customer_id int )";
+	        
+	        stmt.executeUpdate(sql);
+	        
+	        sql = "create table tcustomer ( id int not null primary key auto_increment, name varchar(30) )";
+	        
+	        stmt.executeUpdate(sql);
+	        
 			int total = 10_0000; // 总共存放 10万条数据，但 ORDERID 从 1万开始计数。
 			
 			// ORDERID 正序递增，CUSTOMERID 反序递减
@@ -142,6 +134,145 @@ public class MyPartitionByMurmurHashTest {
 	@Test
 	public void testRehasher(){
 		
+	}
+	
+	
+	/**
+	 * 异常情况
+	 * 
+	 * 当 Connection auto commit 为 false 的情况下，验证主键冲突错误。 
+	 * @throws SQLException 
+	 * 
+	 */
+	@Test
+	public void testTransaction01() throws SQLException{
+		
+       Connection conn = MyTestHelper.getDBConnection( url );
+        
+       Statement stmt = MyTestHelper.getStatement(conn);
+        
+       try{
+        	
+        	conn.setAutoCommit(false); // 首先设置自动提交 false     
+        	
+        	stmt.executeUpdate("insert into tcustomer(ID, NAME) values(1000051, '51customer')"); // will save into dn1
+        	
+        	stmt.executeUpdate("insert into torder(ID, CUSTOMER_ID) values(90000, 1000051)"); // 主键冲突， ORDER 90000 已经存在
+        	
+       }catch(Exception e){
+    	   
+    	    conn.rollback();
+    	   
+    	    e.printStackTrace();
+    	    
+    	    throw new RuntimeException(e);
+    	   
+       }finally{
+    	   
+    	   try {
+			conn.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	   
+       }
+		
+	}
+	
+	/**
+	 * 测试分库后的事务完整性。
+	 * 
+	 * unexpected error thrown at the end.
+	 * @throws SQLException 
+	 * 
+	 */
+	@Test
+	public void testTransaction02() throws SQLException{
+		
+        Connection conn = MyTestHelper.getDBConnection( url );
+        
+        Statement stmt = MyTestHelper.getStatement(conn);
+
+        try{
+        	
+        	conn.setAutoCommit(false); //首先设置自动提交 false   
+        	
+            stmt.executeUpdate("insert into tcustomer(ID, NAME) values(1000051, '51customer')"); // will save into dn1
+            
+            stmt.executeUpdate("insert into torder(ID, CUSTOMER_ID) values(1009000, 1000051)"); // will save into dn2
+            
+            throw new RuntimeException("self defined error"); // 模拟客户端抛出的错误
+            
+            // conn.commit();
+		
+        }catch(Exception e){
+        	
+        	e.printStackTrace();
+        		
+			conn.rollback();
+        	
+        }finally{
+        	
+			try {
+				
+				conn.setAutoCommit(true);
+				
+				stmt.close();
+				
+				conn.close();
+				
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        	
+        }		
+		
+	}
+	
+	/**
+	 * 成功执行
+	 */
+	@Test
+	public void testTransaction03(){
+
+		Connection conn = MyTestHelper.getDBConnection( url );
+        
+        Statement stmt = MyTestHelper.getStatement(conn);
+
+        try{
+        	
+        	conn.setAutoCommit(false); //首先设置自动提交 false   
+        	
+            stmt.executeUpdate("insert into tcustomer(ID, NAME) values(1000051, '51customer')"); // will save into dn1
+            
+            stmt.executeUpdate("insert into torder(ID, CUSTOMER_ID) values(1009000, 1000051)"); // will save into dn2
+            
+            conn.commit();
+            
+        }catch(Exception e){
+        	
+        	e.printStackTrace();
+        	
+        	throw new RuntimeException( e );
+        	
+        }finally{
+        	
+        	try {
+        		
+				conn.setAutoCommit(true);
+				
+				conn.close();
+				
+			} catch (SQLException e) {
+
+				e.printStackTrace();
+				
+			}
+        	
+        }
+	
 	}
 	
 }

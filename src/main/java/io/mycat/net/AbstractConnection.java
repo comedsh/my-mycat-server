@@ -360,6 +360,7 @@ public abstract class AbstractConnection implements NIOConnection {
 				
 				
 			} else {				
+				/** 作者在这里撒费心血的在处理 TCP/IP 多包、拆包的情况... 还不如就使用 Netty **/
 				// not read whole message package ,so check if buffer enough and
 				// compact readbuffer
 				if (!readBuffer.hasRemaining()) {

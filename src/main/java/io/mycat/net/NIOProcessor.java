@@ -43,6 +43,11 @@ import io.mycat.util.NameableExecutor;
 import io.mycat.util.TimeUtil;
 
 /**
+ * 《权威指南》8.3 MyCAT 调优相关注解如下，
+ * 
+ * NIOProcessor 类，持有所有的前后端连接，定期的空闲检查和写队列检查。要完成返个动作。Mycat 是通过遍历 NIOProcessor 持有的所有连接来完成的。
+ * 所以，可以适当的根据系统性能调整 NIOProcessor 的个数。使得前、后段连接可以均匀的分布在每个 NIOProcessor 上。返样，就可以加快每的空闲检查和写队列的检查。快速的将空闲的连接关闭，减轻服务器的内存使用量。
+ * 
  * @author mycat
  */
 public final class NIOProcessor {

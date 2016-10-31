@@ -384,7 +384,8 @@ public abstract class PhysicalDatasource {
 						public void connectionAcquired(BackendConnection conn) {
 							takeCon(conn, handler, attachment, schema);
 						}
-					}, schema);
+					}, /** 生成第一个参数 **/ 
+					schema);
 				} catch (IOException e) {
 					handler.connectionError(e, null);
 				}
