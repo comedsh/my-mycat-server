@@ -279,6 +279,7 @@ public abstract class AbstractConnection implements NIOConnection {
 
 	/**
 	 * 读取可能的Socket字节流
+	 * @param got 当前可读的字节流的长度
 	 */
 	public void onReadData(int got) throws IOException {
 		

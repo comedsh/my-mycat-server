@@ -35,6 +35,18 @@ import io.mycat.MycatServer;
  */
 public abstract class BackendConnectionFactory {
 
+	/**
+	 * 这里需要特别注意的是，
+	 * 
+	 * NIO：作者并没有真真的开启与 database 之间的连接，只是简单的初始化了一个 SocketChannel <br>
+	 * 作者这样做的意图是，把 SocketChannel 绑定到当前的 AbstractConnection <br>
+	 * 
+	 * 同时需要注意的是，这里作者的解耦做得相当不好，同时处理了 NIO 和 AIO 的情形，如果是我，我会分开 <br>
+	 * 
+	 * @param isAIO
+	 * @return
+	 * @throws IOException
+	 */
 	protected NetworkChannel openSocketChannel(boolean isAIO)
 			throws IOException {
 		if (isAIO) {

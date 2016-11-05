@@ -67,6 +67,18 @@ public final class NIOConnector extends Thread implements SocketConnector {
 		selector.wakeup();
 	}
 
+	/**
+	 * 
+	 * 今天读源码读到这里似乎开窍了，Thread Pool 中的线程用不用每次都初始化一个新的线程，其实，完全是受自己控制的... 
+	 * 之前读源码，只要 add 一个新的 Runnable 到线程池中，一定会 new 一个新的 Thread，因为 Runnable 必须依赖于 Thread 才能执行.. 
+	 * 
+	 * 如今，这里的 Thread pool 中的线程是通过 selector 来进行休眠，当有数据来的时候，在唤醒，目的是不让这个线程死掉，也就是说，不用重新创建一个新的线程来处理新的数据..
+	 * 这样一来，我的线程池中的线程数量将会始终维持一定..
+	 * 
+	 * ok，上述的描述，在描绘 NIOConnector 本身不太合适，因为 NIOConnector 本身并没有使用 ThreadPool，但是用在 NIOReactor 上就在合适不过了...  
+	 * 因为 NIOReactor 使用的就是 ThreadPool
+	 * 
+	 */
 	@Override
 	public void run() {
 		final Selector tSelector = this.selector;
@@ -112,7 +124,7 @@ public final class NIOConnector extends Thread implements SocketConnector {
 		BackendAIOConnection c = (BackendAIOConnection) att;
 		try {
 			if (finishConnect(c, (SocketChannel) c.channel)) {
-				clearSelectionKey(key);
+				clearSelectionKey(key); /** 作者这里为什么可以 clear 掉这个 key，是因为该 key 返回的是连接成功消息，一旦连接成功，自然也就不需要了... **/
 				c.setId(ID_GENERATOR.getId());
 				NIOProcessor processor = MycatServer.getInstance()
 						.nextProcessor();

@@ -28,10 +28,16 @@ public class AIOSocketWR extends SocketWR
     public void asynRead()
     {
         ByteBuffer theBuffer = con.readBuffer;
+        
         if (theBuffer == null)
         {
+        	/** 初始化 buffer **/
             theBuffer = con.processor.getBufferPool().allocate(con.processor.getBufferPool().getChunkSize());
+            
+            /** 将 buffer 设置为 con.readBuffer **/
             con.readBuffer = theBuffer;
+            
+            /** 将整个 AIOSocketWR 对象作为 attachment 进行 read **/
             channel.read(theBuffer, this, aioReadHandler);
 
         } else if (theBuffer.hasRemaining())
@@ -194,11 +200,13 @@ class AIOReadHandler implements CompletionHandler<Integer, AIOSocketWR>
     {
         // con.getProcessor().getExecutor().execute(new Runnable() {
         // public void run() {
+    	/** i > 0 表示当前有数据包需要处理，i 表示数据长度 **/
         if (i > 0)
         {
             try
             {
                 wr.con.onReadData(i);
+                /**这里又会调用到 AIOSocketWR.asynRead() 方法，既继续循环读取，直到该 channel 中的数据被读取完毕 **/
                 wr.con.asynRead();
             } catch (IOException e)
             {

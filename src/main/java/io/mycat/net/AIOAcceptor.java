@@ -70,7 +70,10 @@ public final class AIOAcceptor implements SocketAcceptor,
 	public String getName() {
 		return name;
 	}
-
+	
+	/**
+	 * 入口方法，在 {@link MycatServer#startup()} 方法中调用。
+	 */
 	public void start() {
 		this.pendingAccept();
 	}
@@ -82,15 +85,20 @@ public final class AIOAcceptor implements SocketAcceptor,
 	public long getAcceptCount() {
 		return acceptCount;
 	}
-
+	
+	/**
+	 * 
+	 * @param channel
+	 * @param id -> attachment
+	 */
 	private void accept(NetworkChannel channel, Long id) {
 		try {
 			FrontendConnection c = factory.make(channel);
 			c.setAccepted(true);
-			c.setId(id);
+			c.setId(id); // 作为 FrontendConnnection 的 ID
 			NIOProcessor processor = MycatServer.getInstance().nextProcessor();
 			c.setProcessor(processor);
-			c.register();
+			c.register(); // -> AIOSocketWR#asynRead
 		} catch (Exception e) {
 		    LOGGER.error("AioAcceptorError", e);
 			closeChannel(channel);
@@ -99,6 +107,9 @@ public final class AIOAcceptor implements SocketAcceptor,
 
 	private void pendingAccept() {
 		if (serverChannel.isOpen()) {
+			/** 这里的代码就太关键了，serverChannel 开始监听客户端的连接了，并且将 AIOAcceptor 作为 CompletionHandler 回调对象进行监听 **/
+			/** 当有数据返回以后，就直接调用 AIOAcceptor#completed(AsynchronousSocketChannel result, Long id) **/
+			/** 注意，ID_GENERATOR.getId() 是作为 attachment 进行 accept **/
 			serverChannel.accept(ID_GENERATOR.getId(), this);
 		} else {
 			throw new IllegalStateException(
@@ -107,9 +118,13 @@ public final class AIOAcceptor implements SocketAcceptor,
 
 	}
 
+	/**
+	 * @param channel -> Client 与 Mycat 连接的 channel
+	 * @param id -> attachment
+	 */
 	@Override
-	public void completed(AsynchronousSocketChannel result, Long id) {
-		accept(result, id);
+	public void completed(AsynchronousSocketChannel channel, Long id) {
+		accept(channel, id);
 		// next pending waiting
 		pendingAccept();
 

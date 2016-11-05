@@ -345,6 +345,7 @@ public class MycatServer {
 			LOGGER.info("using aio network handler ");
 			asyncChannelGroups = new AsynchronousChannelGroup[processorCount];
 			// startup connector
+			/** 作者在这里初始化一个 AIOConnector 有什么用呢？构造方法是空的，connector 对象也没有被其它对象所引用 **/
 			connector = new AIOConnector();
 			for (int i = 0; i < processors.length; i++) {
 				asyncChannelGroups[i] = AsynchronousChannelGroup.withFixedThreadPool(processorCount,
